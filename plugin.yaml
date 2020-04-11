@@ -1,0 +1,167 @@
+plugins:
+  docker:
+    executor: central_deployment_agent
+    source: https://github.com/ahmadiesa-abu/cloudify-docker-plugin/archive/master.zip
+    package_name: 'cloudify-docker-plugin'
+    package_version: '1.0'
+
+dsl_definitions:
+
+  client_config: &client_config
+    client_config:
+      type: cloudify.types.docker.ClientConfig
+      description: Your Docker client configuration.
+      required: false
+
+data_types:
+
+  cloudify.types.docker.ClientConfig:
+    properties:
+      docker_host:
+        description: Docker Machine IP to connect to.
+        type: string
+        default: ''
+      docker_rest_port:
+        description: Docker Machine rest port.
+        type: string
+        default: ''
+
+  cloudify.types.docker.Image:
+    properties:
+      image_content:
+        description: Docker image to build
+        type: string
+        default: ''
+      tag:
+        description: Docker image tag
+        type: string
+        default: ''
+
+  cloudify.types.docker.Container:
+    properties:
+      image_tag:
+        description: Docker image tag to build container
+        type: string
+        default: ''
+      container_args:
+        description: >
+          dict of arguments to pass to container when run
+          check this URL for details: http://shorturl.at/hlvRT
+        type: dict
+        default: {}
+
+  cloudify.types.docker.ContainerFiles:
+    properties:
+      docker_ip:
+        description: Docker Machine IP
+        type: string
+        default: ''
+      docker_user:
+        description: Docker Machine User
+        type: string
+        default: ''
+      docker_key:
+        description: Docker Machine Private Key
+        type: string
+        default: ''
+      source:
+        description: Files location that will be mapped to container
+        type: string
+        default: ''
+      destination:
+        description: >
+          Location to extract the files into,
+          that will be mapped to container volume later
+        type: string
+        default: ''
+      extra_files:
+        description: More files to add to source before it goes to destination
+        type: list
+        default: []
+      ansible_sources:
+        description: special case for ansible sources
+        type: dict
+        default: {}
+      terraform_sources:
+        description: special case for terraform sources
+        type: dict
+        default: {}
+
+node_types:
+
+  cloudify.nodes.docker.images:
+    derived_from: cloudify.nodes.Root
+    properties:
+      <<: *client_config
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: docker.cloudify_docker.tasks.list_images
+
+  cloudify.nodes.docker.containers:
+    derived_from: cloudify.nodes.Root
+    properties:
+      <<: *client_config
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: docker.cloudify_docker.tasks.list_containers
+
+  cloudify.nodes.docker.host:
+    derived_from: cloudify.nodes.Root
+    properties:
+      <<: *client_config
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: docker.cloudify_docker.tasks.list_host_details
+
+  cloudify.nodes.docker.image:
+    derived_from: cloudify.nodes.Root
+    properties:
+      <<: *client_config
+      resource_config:
+        type: cloudify.types.docker.Image
+        description: Docker Image type
+        required: true
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: docker.cloudify_docker.tasks.build_image
+        delete:
+          implementation: docker.cloudify_docker.tasks.remove_image
+
+  cloudify.nodes.docker.container:
+    derived_from: cloudify.nodes.Root
+    properties:
+      <<: *client_config
+      resource_config:
+        type: cloudify.types.docker.Container
+        description: Docker Container type
+        required: true
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: docker.cloudify_docker.tasks.create_conatiner
+        stop:
+          implementation: docker.cloudify_docker.tasks.stop_conatiner
+          inputs:
+            stop_command:
+              type: string
+              default: ""
+        delete:
+          implementation: docker.cloudify_docker.tasks.remove_container
+
+  cloudify.nodes.docker.container_files:
+    derived_from: cloudify.nodes.Root
+    properties:
+      resource_config:
+        type: cloudify.types.docker.ContainerFiles
+        description: Docker Container Files type
+        required: true
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: docker.cloudify_docker.tasks.prepare_container_files
+        delete:
+          implementation: docker.cloudify_docker.tasks.remove_container_files

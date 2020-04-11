@@ -1,0 +1,4 @@
+cloudify==4.5.5
+docker-py
+nose
+mock>=1.0
