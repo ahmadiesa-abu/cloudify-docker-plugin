@@ -1076,6 +1076,7 @@ def create_ansible_playbook(ctx, **kwargs):
                     'Hosts data was provided but {0} already exists. '
                     'Overwriting existing file.'.format(hosts_abspath))
             # replace the path with volume mapped to continaer
+            ctx.logger.info("data {0}".format(data))
             ctx.logger.info("ANSIBLE_PRIVATE_KEY {0}".format(data.get(ANSIBLE_PRIVATE_KEY, "")))
             ctx.logger.info("dir(site_yaml_abspath) {0}".format(os.path.dirname(site_yaml_abspath)))
             ctx.logger.info("site_yaml_abspath {0}".format(site_yaml_abspath))
