@@ -160,6 +160,17 @@ data_types:
         type: string
         default: ''
 
+  cloudify.types.docker.DockerInstallationConfig:
+    properties:
+      install_url:
+        description: Docker Installation Link
+        type: string
+        default: ''
+      install_script:
+        description: Docker Installation script
+        type: string
+        default: ''
+
   cloudify.types.docker.ClientConfig:
     properties:
       docker_host:
@@ -245,6 +256,21 @@ node_types:
           implementation: docker.cloudify_docker.tasks.list_containers
 
   cloudify.nodes.docker.host:
+    derived_from: cloudify.nodes.Root
+    properties:
+      <<: *docker_machine
+      resource_config:
+        type: cloudify.types.docker.DockerInstallationConfig
+        description: Docker Installation type
+        required: true
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: docker.cloudify_docker.tasks.install_docker
+        delete:
+          implementation: docker.cloudify_docker.tasks.uninstall_docker
+
+  cloudify.nodes.docker.host_details:
     derived_from: cloudify.nodes.Root
     properties:
       <<: *client_config

@@ -1,0 +1,54 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+imports:
+  - http://www.getcloudify.org/spec/cloudify/4.6/types.yaml
+  - https://raw.githubusercontent.com/ahmadiesa-abu/cloudify-docker-plugin/master/plugin.yaml
+
+inputs:
+
+  docker_host:
+    type: string
+    default: 10.239.3.26
+
+  docker_user:
+    type: string
+    default: ubuntu
+
+dsl_definitions:
+
+  docker_machine_config: &docker_machine_config
+    docker_ip: { get_input: docker_host }
+    docker_user: { get_input: docker_host }
+    docker_key: { get_secret: agent_key_private }
+
+node_templates:
+
+  docker_installation:
+    type: cloudify.nodes.docker.host
+    properties:
+      docker_machine: *docker_machine_config
+      resource_config:
+        install_url: https://get.docker.com
+        install_script: |
+          sh get-docker.sh
+          sed -i '/ExecStart/s/usr\/bin\/dockerd/usr\/bin\/dockerd --mtu=1450/' /lib/systemd/system/docker.service
+          sed -i '/ExecStart/ s/$/ -H=tcp:\/\/0.0.0.0:2375 --dns 8.8.8.8/' /lib/systemd/system/docker.service
+          usermod -aG docker $USER
+
+          if [ -f /etc/redhat-release ]; then
+            systemctl daemon-reload
+            systemctl restart docker.service
+          fi
+
+          if [ -f /etc/lsb-release ]; then
+            if dpkg -l | grep systemd
+            then
+               echo "OK";
+            else
+               apt-get install -y systemd
+            fi
+
+            systemctl daemon-reload
+            systemctl restart docker.service
+
+          fi

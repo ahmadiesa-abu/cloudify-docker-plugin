@@ -20,6 +20,7 @@ import yaml
 import errno
 import socket
 import shutil
+import platform
 import tempfile
 import threading
 import subprocess
@@ -54,6 +55,8 @@ WORKSPACE = 'workspace'
 HOSTS = 'hosts'
 BP_INCLUDES_PATH = '/opt/manager/resources/blueprints/' \
                    '{tenant}/{blueprint}/{relative_path}'
+REDHAT_OS_VERS = ('centos', 'redhat', 'fedora')
+DEBIAN_OS_VERS = ('ubuntu', 'debian')
 
 
 def get_lan_ip():
@@ -433,6 +436,102 @@ def remove_container_files(ctx, **kwargs):
 @with_docker
 def list_images(ctx, docker_client, **kwargs):
     ctx.instance.runtime_properties['images'] = docker_client.images(all=True)
+
+
+@operation
+@handle_docker_exception
+def install_docker(ctx, **kwargs):
+
+    def dump_to_file(content):
+        dump_file = \
+            os.path.join(tempfile.mkdtemp(), str(uuid1()))
+        with open(dump_file, 'w') as outfile:
+            outfile.write(content)
+        return dump_file
+
+    # fetch the data needed for installation
+    docker_ip = \
+        ctx.node.properties.get('docker_machine',{}).get('docker_ip',"")
+    docker_user = \
+        ctx.node.properties.get('docker_machine',{}).get('docker_user',"")
+    docker_key = \
+        ctx.node.properties.get('docker_machine',{}).get('docker_key',"")
+    docker_install_url = \
+        ctx.node.properties.get('resource_config',{}).get('install_url',"")
+    docker_install_script = \
+        ctx.node.properties.get('resource_config',{}).get('install_script',"")
+    # check if file or content
+    final_file = "" # represent the file path
+    if not docker_install_script:
+        ctx.logger.error("please check the installation script")
+        return
+    if not os.path.isfile(docker_install_script): # not a path / check if URL
+        final_file = get_shared_resource(docker_install_script)
+        # check if it returns the samething then it is not URL
+        if final_file == docker_install_script: # here we will dump the file
+            final_file = dump_to_file(docker_install_script)
+    else:
+        if os.path.isabs(docker_install_script): # absolute_file_on_manager
+            file_name = docker_install_script.rsplit('/', 1)[1]
+            file_type = file_name.rsplit('.', 1)[1]
+            if file_type == 'zip':
+                final_file = unzip_archive(docker_install_script)
+            elif file_type in TAR_FILE_EXTENSTIONS:
+                final_file = untar_archive(docker_install_script)
+
+        else: # could be bundled in the blueprint [relative_path]
+            final_file = ctx.download_resource(docker_install_script)
+
+    # reaching here we should have got a value for the file
+    if not final_file:
+        ctx.logger.error("the installation script is not valid for some reason")
+        return
+
+    with get_fabric_settings(docker_ip, docker_user, docker_key):
+        output = sudo('which docker', capture=True)
+        if not output: # docker is not installed
+            try:
+                ctx.logger.info("Installing docker from the provided link")
+                output = sudo('curl -o docker.sh {0}'.format(docker_install_url),
+                    capture=True)
+                # if download was successful move to provided install script
+                put(final_file, "/tmp")
+                sudo("chmod a+x /tmp/{0}".format(final_file))
+                sudo("/tmp/{0}".format(final_file))
+            except Exception as e:
+                ctx.logger.error("Something wrong happend : {0}".format(str(e)))
+
+        else:
+            # docker is installed ,we need to check if the api port is enabled
+            try:
+                output = sudo('docker -H tcp://0.0.0.0:2375 ps', capture=True)
+                if output:
+                    ctx.logger.info("your docker installation is good to go")
+                    return
+
+            except:
+                ctx.logger.info(
+                    "Docker is installed but API access either " \
+                    "not configured or not working")
+                return
+
+
+@operation
+def uninstall_docker(ctx, **kwargs):
+    # fetch the data needed for installation
+    docker_ip = \
+        ctx.node.properties.get('docker_machine',{}).get('docker_ip',"")
+    docker_user = \
+        ctx.node.properties.get('docker_machine',{}).get('docker_user',"")
+    docker_key = \
+        ctx.node.properties.get('docker_machine',{}).get('docker_key',"")
+    with get_fabric_settings(docker_ip, docker_user, docker_key):
+        os_type = \
+            lower(platform.linux_distribution(full_distribution_name=False)[0])
+        if os_type in REDHAT_OS_VERS :
+            sudo("yum remove -y docker")
+        elif os_type in DEBIAN_OS_VERS:
+            sudo("apt-get remove -y docker")
 
 
 @operation
@@ -1223,7 +1322,6 @@ def create_ansible_playbook(ctx, **kwargs):
                 sudo("chown -R {0}:{0} {1}".format(docker_user,
                                                    destination_parent))
             put(destination, destination_parent, mirror_local_mode=True)
-
 
 
 @operation
