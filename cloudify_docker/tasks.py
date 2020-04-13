@@ -481,14 +481,21 @@ def install_docker(ctx, **kwargs):
 
         else: # could be bundled in the blueprint [relative_path]
             final_file = ctx.download_resource(docker_install_script)
-
+    ctx.logger.info("downloaded the script to {0}".format(final_file))
     # reaching here we should have got a value for the file
     if not final_file:
         ctx.logger.error("the installation script is not valid for some reason")
         return
 
     with get_fabric_settings(docker_ip, docker_user, docker_key):
-        output = sudo('which docker')
+        docker_installed = False
+        output = None
+        try:
+            output = sudo('which docker')
+            docker_installed = True
+        except:
+            docker_installed = False
+        ctx.logger.error("Is Docker installed ? : {0}".format(docker_installed))
         if not output: # docker is not installed
             try:
                 ctx.logger.info("Installing docker from the provided link")
