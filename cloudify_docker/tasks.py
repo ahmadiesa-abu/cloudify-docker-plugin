@@ -1046,7 +1046,7 @@ def create_ansible_playbook(ctx, **kwargs):
                     is_file_path = False
                 if not is_file_path:
                     private_key_file = \
-                        os.path.join(workspace_dir, str(uuid1()))
+                        os.path.join(workspace_dir, "hosts")
                     with open(private_key_file, 'w') as outfile:
                         outfile.write(existing_dict[key])
                     os.chmod(private_key_file, 0o600)
@@ -1070,7 +1070,7 @@ def create_ansible_playbook(ctx, **kwargs):
         hosts_abspath = os.path.join(os.path.dirname(site_yaml_abspath), HOSTS)
         if isinstance(data, dict):
             data = handle_key_data(
-                data, _ctx.instance.runtime_properties[WORKSPACE])
+                data, os.path.dirname(site_yaml_abspath))
             if os.path.exists(hosts_abspath):
                 _ctx.logger.error(
                     'Hosts data was provided but {0} already exists. '
