@@ -1050,7 +1050,8 @@ def create_ansible_playbook(ctx, **kwargs):
                     with open(private_key_file, 'w') as outfile:
                         outfile.write(existing_dict[key])
                     os.chmod(private_key_file, 0o600)
-                    private_key_file.replace(workspace_dir, container_volume)
+                    private_key_file = \
+                        private_key_file.replace(workspace_dir, container_volume)
                     existing_dict[key] = private_key_file
             return existing_dict
         return recurse_dictionary(_data)
