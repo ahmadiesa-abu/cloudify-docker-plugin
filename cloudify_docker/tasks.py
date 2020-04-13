@@ -488,12 +488,12 @@ def install_docker(ctx, **kwargs):
         return
 
     with get_fabric_settings(docker_ip, docker_user, docker_key):
-        output = sudo('which docker', capture=True)
+        output = sudo('which docker')
         if not output: # docker is not installed
             try:
                 ctx.logger.info("Installing docker from the provided link")
-                output = sudo('curl -o docker.sh {0}'.format(docker_install_url),
-                    capture=True)
+                output = \
+                    sudo('curl -o get-docker.sh {0}'.format(docker_install_url))
                 # if download was successful move to provided install script
                 put(final_file, "/tmp")
                 sudo("chmod a+x /tmp/{0}".format(final_file))
@@ -504,7 +504,7 @@ def install_docker(ctx, **kwargs):
         else:
             # docker is installed ,we need to check if the api port is enabled
             try:
-                output = sudo('docker -H tcp://0.0.0.0:2375 ps', capture=True)
+                output = sudo('docker -H tcp://0.0.0.0:2375 ps')
                 if output:
                     ctx.logger.info("your docker installation is good to go")
                     return
@@ -527,10 +527,10 @@ def uninstall_docker(ctx, **kwargs):
         ctx.node.properties.get('docker_machine',{}).get('docker_key',"")
     with get_fabric_settings(docker_ip, docker_user, docker_key):
         os_type = \
-            lower(platform.linux_distribution(full_distribution_name=False)[0])
-        if os_type in REDHAT_OS_VERS :
+            platform.linux_distribution(full_distribution_name=False)[0]
+        if os_type.lower() in REDHAT_OS_VERS :
             sudo("yum remove -y docker")
-        elif os_type in DEBIAN_OS_VERS:
+        elif os_type.lower() in DEBIAN_OS_VERS:
             sudo("apt-get remove -y docker")
 
 

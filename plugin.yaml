@@ -270,6 +270,7 @@ node_types:
         delete:
           implementation: docker.cloudify_docker.tasks.uninstall_docker
 
+
   cloudify.nodes.docker.host_details:
     derived_from: cloudify.nodes.Root
     properties:
