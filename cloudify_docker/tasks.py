@@ -462,74 +462,67 @@ def install_docker(ctx, **kwargs):
         ctx.node.properties.get('resource_config',{}).get('install_script',"")
     # check if file or content
     final_file = "" # represent the file path
-    # if not docker_install_script:
-    #     ctx.logger.error("please check the installation script")
-    #     return
-    # if not os.path.isfile(docker_install_script): # not a path / check if URL
-    #     final_file = get_shared_resource(docker_install_script)
-    #     # check if it returns the samething then it is not URL
-    #     if final_file == docker_install_script: # here we will dump the file
-    #         final_file = dump_to_file(docker_install_script)
-    # else:
-    #     if os.path.isabs(docker_install_script): # absolute_file_on_manager
-    #         file_name = docker_install_script.rsplit('/', 1)[1]
-    #         file_type = file_name.rsplit('.', 1)[1]
-    #         if file_type == 'zip':
-    #             final_file = unzip_archive(docker_install_script)
-    #         elif file_type in TAR_FILE_EXTENSTIONS:
-    #             final_file = untar_archive(docker_install_script)
-    #
-    #     else: # could be bundled in the blueprint [relative_path]
-    #         final_file = ctx.download_resource(docker_install_script)
-    # ctx.logger.info("downloaded the script to {0}".format(final_file))
-    # # reaching here we should have got a value for the file
-    # if not final_file:
-    #     ctx.logger.error("the installation script is not valid for some reason")
-    #     return
-    # ctx.logger.info("docker_ip {0}".format(docker_ip))
-    # ctx.logger.info("docker_user {0}".format(docker_user))
-    # ctx.logger.info("docker_key {0}".format(docker_key))
+    if not docker_install_script:
+        ctx.logger.error("please check the installation script")
+        return
+    if not os.path.isfile(docker_install_script): # not a path / check if URL
+        final_file = get_shared_resource(docker_install_script)
+        # check if it returns the samething then it is not URL
+        if final_file == docker_install_script: # here we will dump the file
+            final_file = dump_to_file(docker_install_script)
+    else:
+        if os.path.isabs(docker_install_script): # absolute_file_on_manager
+            file_name = docker_install_script.rsplit('/', 1)[1]
+            file_type = file_name.rsplit('.', 1)[1]
+            if file_type == 'zip':
+                final_file = unzip_archive(docker_install_script)
+            elif file_type in TAR_FILE_EXTENSTIONS:
+                final_file = untar_archive(docker_install_script)
+
+        else: # could be bundled in the blueprint [relative_path]
+            final_file = ctx.download_resource(docker_install_script)
+    ctx.logger.info("downloaded the script to {0}".format(final_file))
+    # reaching here we should have got a value for the file
+    if not final_file:
+        ctx.logger.error("the installation script is not valid for some reason")
+        return
+
     with get_fabric_settings(docker_ip, docker_user, docker_key):
         docker_installed = False
         output = None
         try:
-            output = run('which docker')
+            output = sudo('which docker')
             docker_installed = True
-        except Exception as e:
-            ctx.logger.info("exception {0}".format(e))
+        except:
             docker_installed = False
-        # ctx.logger.info("Is Docker installed ? : {0}".format(docker_installed))
-        # if not docker_installed:
-        #     try:
-        #         ctx.logger.info("Installing docker from the provided link")
-        #         output = \
-        #             sudo('curl -fsSL -o get-docker.sh {0}; '\
-        #                 'sh get-docker.sh'.format(
-        #                     docker_install_url))
-        #
-        #         ctx.logger.info("finished downloading ?")
-        #         # if download was successful move to provided install script
-        #         put(final_file, "/tmp")
-        #         run("chmod a+x /tmp/{0}".format(final_file))
-        #         run("/tmp/{0}".format(final_file))
-        #     except FabricException as fe:
-        #         ctx.logger.error("Something wrong fabric : {0}".format(str(fe)))
-        #     except Exception as e:
-        #         ctx.logger.error("Something wrong happend : {0}".format(str(e)))
-        #
-        # else:
-        #     # docker is installed ,we need to check if the api port is enabled
-        #     try:
-        #         output = sudo('docker -H tcp://0.0.0.0:2375 ps')
-        #         if output:
-        #             ctx.logger.info("your docker installation is good to go")
-        #             return
-        #
-        #     except:
-        #         ctx.logger.info(
-        #             "Docker is installed but API access either " \
-        #             "not configured or not working")
-        #         return
+        ctx.logger.info("Is Docker installed ? : {0}".format(docker_installed))
+        if not docker_installed: # docker is not installed
+            try:
+                ctx.logger.info("Installing docker from the provided link")
+                output = \
+                    sudo('curl -fsSL -o get-docker.sh {0}; '\
+                        'sh get-docker.sh'.format(
+                            docker_install_url))
+                # if download was successful move to provided install script
+                put(final_file, "/tmp")
+                sudo("chmod a+x /tmp/{0}".format(final_file))
+                sudo("/tmp/{0}".format(final_file))
+            except Exception as e:
+                ctx.logger.error("Something wrong happend : {0}".format(str(e)))
+
+        else:
+            # docker is installed ,we need to check if the api port is enabled
+            try:
+                output = sudo('docker -H tcp://0.0.0.0:2375 ps')
+                if output:
+                    ctx.logger.info("your docker installation is good to go")
+                    return
+
+            except:
+                ctx.logger.info(
+                    "Docker is installed but API access either " \
+                    "not configured or not working")
+                return
 
 
 @operation
