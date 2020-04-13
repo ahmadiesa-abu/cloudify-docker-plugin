@@ -46,7 +46,7 @@ data_types:
       container_args:
         description: >
           dict of arguments to pass to container when run
-          check this URL for details: http:shorturl.at/ACW07
+          check this URL for details: http://shorturl.at/hlvRT
         # type: dict
         default: {}
 
@@ -80,6 +80,10 @@ data_types:
         default: []
       ansible_sources:
         description: special case for ansible sources
+        # type: dict
+        default: {}
+      terraform_sources:
+        description: special case for terraform sources
         # type: dict
         default: {}
 
@@ -138,7 +142,13 @@ node_types:
     interfaces:
       cloudify.interfaces.lifecycle:
         create:
-          implementation: docker.cloudify_docker.tasks.run_conatiner
+          implementation: docker.cloudify_docker.tasks.create_conatiner
+        stop:
+          implementation: docker.cloudify_docker.tasks.stop_conatiner
+          inputs:
+            stop_command:
+              type: string
+              default: ""
         delete:
           implementation: docker.cloudify_docker.tasks.remove_container
 

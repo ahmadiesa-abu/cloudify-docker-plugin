@@ -8,7 +8,7 @@ inputs:
 
   docker_host:
     type: string
-    default: 10.239.2.253
+    default: 10.239.3.28
 
   docker_user:
     type: string
@@ -72,23 +72,27 @@ node_templates:
             - { get_input: ansible_version }
 
   docker_ansible_container_files:
-    type: cloudify.nodes.docker.container_files
+    type: cloudify.nodes.docker.ansible_playbook
     properties:
-      resource_config:
-        docker_machine:
-          docker_ip: { get_input: docker_host }
-          docker_user: { get_input: docker_user }
-          docker_key: { get_secret: agent_key_private }
-        source: https://github.com/ahmadiesa-abu/test-ansible-from-git.git
-        destination: ""
-        ansible_sources:
-          container_volume: { get_input: container_volume }
-          playbook_path: { get_input: playbook_path }
-          ansible_host: { get_input: ansible_host }
-          ansible_user: { get_input: ansible_user }
-          ansible_ssh_private_key_file: { get_secret: ahmad_agent_key_private }
-          ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
-          ansible_become: True
+      docker_machine:
+        container_volume: { get_input: container_volume }
+        docker_ip: { get_input: docker_host }
+        docker_user: { get_input: docker_user }
+        docker_key: { get_secret: agent_key_private }
+      playbook_source_path: https://github.com/ahmadiesa-abu/test-ansible-from-git.git
+      playbook_path: apache2/playbook.yaml
+      ansible_env_vars:
+        ANSIBLE_HOST_KEY_CHECKING: "False"
+        ANSIBLE_INVALID_TASK_ATTRIBUTE_FAILED: "False"
+      sources:
+        vms:
+          hosts:
+            vm:
+              ansible_host: { get_input: ansible_host }
+              ansible_user: { get_input: ansible_user }
+              ansible_ssh_private_key_file: { get_secret: agent_key_private }
+              ansible_become: True
+              ansible_ssh_common_args: -o StrictHostKeyChecking=no
 
   docker_ansible_container:
     type: cloudify.nodes.docker.container
@@ -102,9 +106,7 @@ node_templates:
         container_args:
           command: { get_attribute: [docker_ansible_container_files, ansible_container_command_arg] }
           working_dir: { get_input: container_volume }
-          environment:
-            ANSIBLE_HOST_KEY_CHECKING: False
-            ANSIBLE_INVALID_TASK_ATTRIBUTE_FAILED: False
+          environment: {get_attribute: [docker_ansible_container_files, ansible_env_vars]}
           volumes:
             - { get_input: container_volume }
           volumes_mapping:

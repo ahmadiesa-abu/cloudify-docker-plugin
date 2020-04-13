@@ -174,9 +174,11 @@ class TestPlugin(unittest.TestCase):
             mkdir(destination)
         resource_config_test = {
             "resource_config":{
-                "docker_ip":docker_host,
-                "docker_user":"centos",
-                "docker_key":"----RSA----",
+                "docker_machine":{
+                    "docker_ip":docker_host,
+                    "docker_user":"centos",
+                    "docker_key":"----RSA----",
+                },
                 "source":source,
                 "destination":destination,
             }
@@ -199,9 +201,11 @@ class TestPlugin(unittest.TestCase):
         destination = "/tmp/destination"
         resource_config_test = {
             "resource_config":{
-                "docker_ip":docker_host,
-                "docker_user":"centos",
-                "docker_key":"----RSA----",
+                "docker_machine":{
+                    "docker_ip":docker_host,
+                    "docker_user":"centos",
+                    "docker_key":"----RSA----",
+                },
                 "source":source,
                 "destination":destination,
             }

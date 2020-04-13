@@ -13,7 +13,152 @@ dsl_definitions:
       description: Your Docker client configuration.
       required: false
 
+  docker_machine: &docker_machine
+    docker_machine:
+      type: cloudify.types.docker.DockerMachineConfig
+      description: Docker Machine IP,User,Private_key
+      required: false
+
+  playbook_config: &playbook_config
+    ansible_playbook_executable_path:
+      type: string
+      default: "ansible-playbook"
+      description: >
+        A full path to your ansible_playbook executable if user don't want to
+        use the included version of executable in the plugin
+    playbook_source_path:
+      type: string
+      default: ""
+      description: >
+        A full path/URL that contain playbook specified in playbook_path
+        or site_yaml_path.
+    playbook_path:
+      type: string
+      default: ""
+      description: >
+        A path to your `site.yaml` or `main.yaml` in your
+        Ansible Playbook relative to blueprint or playbook_source_path
+        if playbook_source_path is URL to archive File relative inside the archive.
+    site_yaml_path:
+      type: string
+      default: ""
+      description: >
+        DEPRECATED.
+        A path to your `site.yaml` or `main.yaml` in your
+        Ansible Playbook relative to blueprint or playbook_source_path
+        if playbook_source_path is URL to archive File relative inside the archive.
+    additional_playbook_files:
+      # uncomment on 5+
+      # type: list
+      default: []
+      description: >
+        A list of string paths blueprint resources that you
+        would like to download to the playbook directory.
+        If you use this variable, you must list all of the paths
+        that you expect to download.
+    sources:
+      default: {}
+      description: >
+        Your Inventory sources. Either YAML or a path to a file.
+        If not provided the inventory will be take from the `sources`
+        runtime property.
+    run_data:
+      default: {}
+      description: >
+        Variable values.
+    sensitive_keys:
+      # uncomment on 5+
+      # type: list
+      description: keys that you want us to obscure
+      default:
+        - ansible_password
+    options_config:
+      default: {}
+      description: >
+        Command-line options, such as `tags` or `skip_tags`.
+    ansible_env_vars:
+      default:
+        ANSIBLE_HOST_KEY_CHECKING: "False"
+        # On Ansible 2.8.x "INVALID_TASK_ATTRIBUTE_FAILED" default value has
+        # been changed to "True" which cause failure when run playbook
+        ANSIBLE_INVALID_TASK_ATTRIBUTE_FAILED: "False"
+      description: >
+        A dictionary of environment variables to set.
+    debug_level:
+      type: integer
+      default: 2
+      description: >
+        Debug level
+    additional_args:
+      type: string
+      description: >
+        Additional args that you want to use, for example, '-c local'.
+      default: ''
+    save_playbook:
+      type: boolean
+      description: >
+        Save playbook after action
+      default: false
+    remerge_sources:
+      type: boolean
+      description: >
+        update sources on target node
+      default: false
+    ansible_become:
+      type: boolean
+      description: >
+        A boolean value, `true` or `false` whether
+        to assume the user privileges.
+      default: false
+
+  playbook_inputs: &playbook_inputs
+    ansible_playbook_executable_path:
+      default: { get_property: [SELF, ansible_playbook_executable_path] }
+    playbook_source_path:
+      default: { get_property: [SELF, playbook_source_path] }
+    playbook_path:
+      default: { get_property: [SELF, playbook_path] }
+    site_yaml_path:
+      default: { get_property: [SELF, site_yaml_path] }
+    save_playbook:
+      default: { get_property: [SELF, save_playbook] }
+    remerge_sources:
+      default: { get_property: [SELF, remerge_sources] }
+    sources:
+      default: { get_property: [SELF, sources] }
+    run_data:
+      default: { get_property: [SELF, run_data] }
+    sensitive_keys:
+      default: { get_property: [SELF, sensitive_keys] }
+    options_config:
+      default: { get_property: [SELF, options_config] }
+    ansible_env_vars:
+      default: { get_property: [SELF, ansible_env_vars] }
+    debug_level:
+      default: { get_property: [SELF, debug_level] }
+    additional_args:
+      default: { get_property: [SELF, additional_args] }
+
 data_types:
+
+  cloudify.types.docker.DockerMachineConfig:
+    properties:
+      docker_ip:
+        description: Docker Machine IP
+        type: string
+        default: ''
+      docker_user:
+        description: Docker Machine User
+        type: string
+        default: ''
+      docker_key:
+        description: Docker Machine Private Key
+        type: string
+        default: ''
+      container_volume:
+        description: Docker Container volume_mapping
+        type: string
+        default: ''
 
   cloudify.types.docker.ClientConfig:
     properties:
@@ -46,24 +191,16 @@ data_types:
       container_args:
         description: >
           dict of arguments to pass to container when run
-          check this URL for details: http://shorturl.at/hlvRT
+          check this URL for details: https://tinyurl.com/v8url54
         type: dict
         default: {}
 
   cloudify.types.docker.ContainerFiles:
     properties:
-      docker_ip:
-        description: Docker Machine IP
-        type: string
-        default: ''
-      docker_user:
-        description: Docker Machine User
-        type: string
-        default: ''
-      docker_key:
-        description: Docker Machine Private Key
-        type: string
-        default: ''
+      docker_machine:
+        description: Docker Machine IP,User,Private_key
+        type: cloudify.types.docker.DockerMachineConfig
+        default: {}
       source:
         description: Files location that will be mapped to container
         type: string
@@ -76,15 +213,15 @@ data_types:
         default: ''
       extra_files:
         description: More files to add to source before it goes to destination
-        type: list
+        # type: list
         default: []
       ansible_sources:
         description: special case for ansible sources
-        type: dict
+        # type: dict
         default: {}
       terraform_sources:
         description: special case for terraform sources
-        type: dict
+        # type: dict
         default: {}
 
 node_types:
@@ -165,3 +302,19 @@ node_types:
           implementation: docker.cloudify_docker.tasks.prepare_container_files
         delete:
           implementation: docker.cloudify_docker.tasks.remove_container_files
+
+  cloudify.nodes.docker.ansible_playbook:
+    derived_from: cloudify.nodes.Root
+    properties:
+      <<: *playbook_config
+      <<: *docker_machine
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        precreate:
+          implementation: docker.cloudify_docker.tasks.set_playbook_config
+          inputs:
+            <<: *playbook_inputs
+        create:
+          implementation: docker.cloudify_docker.tasks.create_ansible_playbook
+        delete:
+          implementation: docker.cloudify_docker.tasks.remove_ansible_playbook
