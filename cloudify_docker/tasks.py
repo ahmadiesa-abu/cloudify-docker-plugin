@@ -1054,7 +1054,7 @@ def create_ansible_playbook(ctx, **kwargs):
             return existing_dict
         return recurse_dictionary(_data)
 
-    def handle_sources(data, site_yaml_abspath, _ctx):
+    def handle_sources(data, site_yaml_abspath, _ctx, container_volume):
         """Allow users to provide a path to a hosts file
         or to generate hosts dynamically,
         which is more comfortable for Cloudify users.
@@ -1075,6 +1075,10 @@ def create_ansible_playbook(ctx, **kwargs):
                 _ctx.logger.error(
                     'Hosts data was provided but {0} already exists. '
                     'Overwriting existing file.'.format(hosts_abspath))
+            # replace the path with volume mapped to continaer
+            data[ANSIBLE_PRIVATE_KEY] = \
+                data.get(ANSIBLE_PRIVATE_KEY, "").repalce(hosts_abspath,
+                    container_volume)
             with open(hosts_abspath, 'w') as outfile:
                 yaml.safe_dump(data, outfile, default_flow_style=False)
         elif isinstance(data, basestring):
