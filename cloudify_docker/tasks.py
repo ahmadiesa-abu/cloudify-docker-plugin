@@ -1023,7 +1023,7 @@ def create_ansible_playbook(ctx, **kwargs):
                 outfile.write(filepath)
         return new_inventory_path
 
-    def handle_key_data(_data, workspace_dir):
+    def handle_key_data(_data, workspace_dir, container_volume):
         """Take Key Data from ansible_ssh_private_key_file and
         replace with a temp file.
 
@@ -1050,6 +1050,7 @@ def create_ansible_playbook(ctx, **kwargs):
                     with open(private_key_file, 'w') as outfile:
                         outfile.write(existing_dict[key])
                     os.chmod(private_key_file, 0o600)
+                    private_key_file.replace(workspace_dir, container_volume)
                     existing_dict[key] = private_key_file
             return existing_dict
         return recurse_dictionary(_data)
@@ -1070,21 +1071,11 @@ def create_ansible_playbook(ctx, **kwargs):
         hosts_abspath = os.path.join(os.path.dirname(site_yaml_abspath), HOSTS)
         if isinstance(data, dict):
             data = handle_key_data(
-                data, os.path.dirname(site_yaml_abspath))
+                data, os.path.dirname(site_yaml_abspath), container_volume)
             if os.path.exists(hosts_abspath):
                 _ctx.logger.error(
                     'Hosts data was provided but {0} already exists. '
                     'Overwriting existing file.'.format(hosts_abspath))
-            # replace the path with volume mapped to continaer
-            ctx.logger.info("data {0}".format(data))
-            ctx.logger.info("ANSIBLE_PRIVATE_KEY {0}".format(data.get(ANSIBLE_PRIVATE_KEY, "")))
-            ctx.logger.info("dir(site_yaml_abspath) {0}".format(os.path.dirname(site_yaml_abspath)))
-            ctx.logger.info("site_yaml_abspath {0}".format(site_yaml_abspath))
-            ctx.logger.info("container_volume {0}".format(container_volume))
-            data[ANSIBLE_PRIVATE_KEY] = \
-                data.get(ANSIBLE_PRIVATE_KEY, "").replace(
-                    os.path.dirname(site_yaml_abspath),
-                    container_volume)
             with open(hosts_abspath, 'w') as outfile:
                 yaml.safe_dump(data, outfile, default_flow_style=False)
         elif isinstance(data, basestring):
