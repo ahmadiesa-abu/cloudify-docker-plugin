@@ -500,7 +500,9 @@ def install_docker(ctx, **kwargs):
             try:
                 ctx.logger.info("Installing docker from the provided link")
                 output = \
-                    sudo('curl -o get-docker.sh {0}'.format(docker_install_url))
+                    sudo('curl -fsSL -o get-docker.sh {0}; '\
+                        'sh get-docker.sh'.format(
+                            docker_install_url))
                 # if download was successful move to provided install script
                 put(final_file, "/tmp")
                 sudo("chmod a+x /tmp/{0}".format(final_file))

@@ -30,7 +30,6 @@ node_templates:
       resource_config:
         install_url: https://get.docker.com
         install_script: |
-          sh get-docker.sh
           sed -i '/ExecStart/s/usr\/bin\/dockerd/usr\/bin\/dockerd --mtu=1450/' /lib/systemd/system/docker.service
           sed -i '/ExecStart/ s/$/ -H=tcp:\/\/0.0.0.0:2375 --dns 8.8.8.8/' /lib/systemd/system/docker.service
           usermod -aG docker $USER
