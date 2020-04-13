@@ -1077,7 +1077,8 @@ def create_ansible_playbook(ctx, **kwargs):
                     'Overwriting existing file.'.format(hosts_abspath))
             # replace the path with volume mapped to continaer
             data[ANSIBLE_PRIVATE_KEY] = \
-                data.get(ANSIBLE_PRIVATE_KEY, "").repalce(hosts_abspath,
+                data.get(ANSIBLE_PRIVATE_KEY, "").replace(
+                    os.path.dirname(site_yaml_abspath),
                     container_volume)
             with open(hosts_abspath, 'w') as outfile:
                 yaml.safe_dump(data, outfile, default_flow_style=False)
@@ -1159,7 +1160,8 @@ def create_ansible_playbook(ctx, **kwargs):
         playbook_args = {
             'playbook_path': playbook_path,
             'sources': handle_sources(sources, os.path.dirname(playbook_path),
-                ctx),
+                ctx, ctx.node.properties.get('docker_machine',{}).get(
+                    'container_volume',"")),
             'verbosity': debug_level,
             'additional_args': additional_args or '',
         }
