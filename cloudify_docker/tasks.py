@@ -495,8 +495,8 @@ def install_docker(ctx, **kwargs):
             docker_installed = True
         except:
             docker_installed = False
-        ctx.logger.error("Is Docker installed ? : {0}".format(docker_installed))
-        if not output: # docker is not installed
+        ctx.logger.info("Is Docker installed ? : {0}".format(docker_installed))
+        if not docker_installed:
             try:
                 ctx.logger.info("Installing docker from the provided link")
                 output = \
