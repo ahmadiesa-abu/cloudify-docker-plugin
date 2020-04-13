@@ -8,7 +8,7 @@ inputs:
 
   docker_host:
     type: string
-    default: 10.239.2.253
+    default: 10.239.3.28
 
   docker_user:
     type: string

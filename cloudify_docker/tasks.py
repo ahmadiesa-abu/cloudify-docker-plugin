@@ -494,7 +494,7 @@ def remove_image(ctx, docker_client, **kwargs):
 @operation
 @handle_docker_exception
 @with_docker
-def create_conatiner(ctx, docker_client, **kwargs):
+def create_container(ctx, docker_client, **kwargs):
     image_tag = \
         ctx.node.properties.get('resource_config',{}).get('image_tag',"")
     container_args = \
@@ -639,7 +639,7 @@ def create_conatiner(ctx, docker_client, **kwargs):
 @operation
 @handle_docker_exception
 @with_docker
-def start_conatiner(ctx, docker_client, **kwargs):
+def start_container(ctx, docker_client, **kwargs):
     container_args = \
         ctx.node.properties.get('resource_config',{}).get('container_args',{})
     container = ctx.instance.runtime_properties.get('container',"")

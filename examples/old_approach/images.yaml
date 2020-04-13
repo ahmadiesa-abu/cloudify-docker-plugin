@@ -8,7 +8,7 @@ inputs:
 
   docker_host:
     type: string
-    default: 10.239.2.253
+    default: 10.239.3.28
 
   docker_user:
     type: string
@@ -91,7 +91,7 @@ node_templates:
             container_volume: { get_input: container_volume }
             ansible_host: { get_input: ansible_host }
             ansible_user: { get_input: ansible_user }
-            ansible_ssh_private_key_file: { get_secret: ahmad_agent_key_private }
+            ansible_ssh_private_key_file: { get_secret: agent_key_private }
             ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
             ansible_become: True
           executor: central_deployment_agent
@@ -104,9 +104,10 @@ node_templates:
     type: cloudify.nodes.docker.container_files
     properties:
       resource_config:
-        docker_ip: { get_input: docker_host }
-        docker_user: { get_input: docker_user }
-        docker_key: { get_secret: agent_key_private }
+        docker_machine:
+          docker_ip: { get_input: docker_host }
+          docker_user: { get_input: docker_user }
+          docker_key: { get_secret: agent_key_private }
         source: https://github.com/ahmadiesa-abu/test-ansible-from-git.git
         destination: ""
         extra_files:

@@ -279,9 +279,9 @@ node_types:
     interfaces:
       cloudify.interfaces.lifecycle:
         create:
-          implementation: docker.cloudify_docker.tasks.create_conatiner
+          implementation: docker.cloudify_docker.tasks.create_container
         stop:
-          implementation: docker.cloudify_docker.tasks.stop_conatiner
+          implementation: docker.cloudify_docker.tasks.stop_container
           inputs:
             stop_command:
               type: string
