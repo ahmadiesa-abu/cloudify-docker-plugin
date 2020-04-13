@@ -507,6 +507,8 @@ def install_docker(ctx, **kwargs):
                 put(final_file, "/tmp")
                 sudo("chmod a+x /tmp/{0}".format(final_file))
                 sudo("/tmp/{0}".format(final_file))
+            except EOFError as eof:
+                ctx.logger.error("EOF happend : {0}".format(str(e)))
             except Exception as e:
                 ctx.logger.error("Something wrong happend : {0}".format(str(e)))
 
