@@ -1046,7 +1046,7 @@ def create_ansible_playbook(ctx, **kwargs):
                     is_file_path = False
                 if not is_file_path:
                     private_key_file = \
-                        os.path.join(workspace_dir, "hosts")
+                        os.path.join(workspace_dir, str(uuid1()))
                     with open(private_key_file, 'w') as outfile:
                         outfile.write(existing_dict[key])
                     os.chmod(private_key_file, 0o600)
