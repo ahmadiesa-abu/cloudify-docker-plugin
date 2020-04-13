@@ -8,7 +8,7 @@ inputs:
 
   docker_host:
     type: string
-    default: 10.239.2.253
+    default: 10.239.3.28
 
   docker_user:
     type: string
@@ -86,7 +86,7 @@ node_templates:
           playbook_path: { get_input: playbook_path }
           ansible_host: { get_input: ansible_host }
           ansible_user: { get_input: ansible_user }
-          ansible_ssh_private_key_file: { get_secret: ahmad_agent_key_private }
+          ansible_ssh_private_key_file: { get_secret: agent_key_private }
           ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
           ansible_become: True
 

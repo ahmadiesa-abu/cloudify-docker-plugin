@@ -407,11 +407,14 @@ terraform state pull
 def remove_container_files(ctx, **kwargs):
 
     docker_ip = \
-        ctx.node.properties.get('resource_config',{}).get('docker_ip',"")
+        ctx.node.properties.get('resource_config',{}).get('docker_machine',
+            {}).get('docker_ip',"")
     docker_user = \
-        ctx.node.properties.get('resource_config',{}).get('docker_user',"")
+        ctx.node.properties.get('resource_config',{}).get('docker_machine',
+            {}).get('docker_user',"")
     docker_key = \
-        ctx.node.properties.get('resource_config',{}).get('docker_key',"")
+        ctx.node.properties.get('resource_config',{}).get('docker_machine',
+            {}).get('docker_key',"")
 
     destination = ctx.instance.runtime_properties.get('destination',"")
     if not destination:
