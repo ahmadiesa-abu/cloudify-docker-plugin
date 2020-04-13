@@ -1068,9 +1068,6 @@ def create_ansible_playbook(ctx, **kwargs):
         """
 
         hosts_abspath = os.path.join(os.path.dirname(site_yaml_abspath), HOSTS)
-        ctx.logger.info(
-            "hosts file will be at this location {0}".format(hosts_abspath))
-        ctx.logger.info("data to handle {0}".format(data))
         if isinstance(data, dict):
             data = handle_key_data(
                 data, _ctx.instance.runtime_properties[WORKSPACE])
@@ -1157,7 +1154,8 @@ def create_ansible_playbook(ctx, **kwargs):
                 playbook_path, additional_playbook_files, ctx)
         playbook_args = {
             'playbook_path': playbook_path,
-            'sources': handle_sources(sources, playbook_path, ctx),
+            'sources': handle_sources(sources, os.path.dirname(playbook_path),
+                ctx),
             'verbosity': debug_level,
             'additional_args': additional_args or '',
         }
