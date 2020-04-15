@@ -25,7 +25,8 @@ def main():
     hosts_path = mkdtemp()
     hosts_file = os.path.join(hosts_path, HOSTS_FILE_NAME)
     operation_name = ctx.operation.name or ""
-    ctx.logger.info('Handling sources for operation {0}'.format(operation_name))
+    ctx.logger.info(
+        'Handling sources for operation {0}'.format(operation_name))
     inputs.pop(CLOUDIFY_CONTEXT)
     inputs.pop(CLOUDIFY_SCRIPT_PATH)
     if operation_name == CLOUDIFY_CREATE_OPERATION:
@@ -48,16 +49,16 @@ def main():
         private_key_val = inputs.get(ANSIBLE_PRIVATE_KEY, "")
         # inputs is of type proxy_tools.Proxy -> can't dump it
         hosts_dict = {
-            "all":{
-                "hosts":{
-                    "instance":{}
+            "all": {
+                "hosts": {
+                    "instance": {}
                 }
             }
         }
         for key in inputs:
             if key in EXECLUDE_INPUTS:
                 continue
-            elif key==ANSIBLE_PRIVATE_KEY:
+            elif key == ANSIBLE_PRIVATE_KEY:
                 # replace docker mapping to container volume
                 hosts_dict['all']['hosts']['instance'][key] = \
                     inputs.get(key).replace(hosts_path,
@@ -76,6 +77,7 @@ def main():
                 os.remove(hosts_file)
         except TypeError:
             ctx.logger.info("hosts file doesn't exist")
+
 
 if __name__ == "__main__":
     main()

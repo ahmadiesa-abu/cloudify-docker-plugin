@@ -1,0 +1,88 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+imports:
+  - http://www.getcloudify.org/spec/cloudify/4.6/types.yaml
+  - https://raw.githubusercontent.com/ahmadiesa-abu/cloudify-docker-plugin/master/plugin.yaml
+
+inputs:
+
+  docker_host:
+    type: string
+    default: 10.239.3.28
+
+  docker_user:
+    type: string
+    default: centos
+
+  centos_version:
+    description: Ansible version to prepare image for
+    type: string
+    default: "7"
+
+  container_volume:
+    description: volume that will be mapped to container
+    type: string
+    default: "/mnt/vol1"
+
+  image_tag:
+    description: Tag for the image to build
+    type: string
+    default: "centos:"
+
+dsl_definitions:
+
+  docker_config: &docker_config
+    docker_host: { get_input: docker_host }
+    docker_rest_port: 2375
+
+node_templates:
+
+  docker_centos_image:
+    type: cloudify.nodes.docker.image
+    properties:
+      client_config: *docker_config
+      resource_config:
+        image_content: https://github.com/ahmadiesa-abu/general-files/releases/download/1.0.0/Dockerfile.txt
+        tag:
+          concat:
+            - { get_input: image_tag }
+            - { get_input: centos_version }
+
+  docker_centos_container_files:
+    type: cloudify.nodes.docker.container_files
+    properties:
+      resource_config:
+        docker_machine:
+          docker_ip: { get_input: docker_host }
+          docker_user: { get_input: docker_user }
+          docker_key: { get_secret: agent_key_private }
+        source: https://github.com/ahmadiesa-abu/test-ansible-from-git.git
+        destination: ""
+
+  docker_centos_container:
+    type: cloudify.nodes.docker.container
+    properties:
+      client_config: *docker_config
+      resource_config:
+        image_tag:
+          concat:
+            - { get_input: image_tag }
+            - { get_input: centos_version }
+        container_args:
+          command: --version
+          working_dir: { get_input: container_volume }
+          volumes:
+            - { get_input: container_volume }
+          volumes_mapping:
+            - { get_attribute: [docker_centos_container_files, destination] }
+    relationships:
+      - type: cloudify.relationships.depends_on
+        target: docker_centos_image
+      - type: cloudify.relationships.depends_on
+        target: docker_centos_container_files
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        stop:
+          implementation: docker.cloudify_docker.tasks.stop_container
+          inputs:
+            stop_command: 'echo bye bye'

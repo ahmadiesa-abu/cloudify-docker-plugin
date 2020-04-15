@@ -235,6 +235,39 @@ data_types:
         # type: dict
         default: {}
 
+  cloudify.types.terraform.Backend:
+    properties:
+      name:
+        type: string
+        description: Some name.
+        required: False
+      options:
+        description: Should be a dictionary of key/values.
+        required: False
+
+  cloudify.types.terraform.RootModule:
+    properties:
+      source:
+        type: string
+        description: >
+          Path or URL to the ZIP file containing the Terraform project.
+          If this is a path, then it must be relative to the blueprint's root.
+        required: true
+      backend:
+        type: cloudify.types.terraform.Backend
+        description: >
+          If a backend is not defined in source,
+          and you want to use a specific backend, define that here.
+        default: {}
+      variables:
+        description: A dictionary of variables.
+        required: false
+        default: {}
+      environment_variables:
+        description: A dictionary of environment variables.
+        required: false
+        default: {}
+
 node_types:
 
   cloudify.nodes.docker.images:
@@ -338,10 +371,28 @@ node_types:
     interfaces:
       cloudify.interfaces.lifecycle:
         precreate:
-          implementation: docker.cloudify_docker.tasks.set_playbook_config
+          implementation: docker.cloudify_docker.ansible.set_playbook_config
           inputs:
             <<: *playbook_inputs
         create:
-          implementation: docker.cloudify_docker.tasks.create_ansible_playbook
+          implementation: docker.cloudify_docker.ansible.create_ansible_playbook
         delete:
-          implementation: docker.cloudify_docker.tasks.remove_ansible_playbook
+          implementation: docker.cloudify_docker.ansible.remove_ansible_playbook
+
+  cloudify.nodes.docker.terraform_module:
+    derived_from: cloudify.nodes.Root
+    properties:
+      <<: *docker_machine
+      terraform_plugins:
+        description: Terraform Plugins to install
+        default: []
+        required: true
+      resource_config:
+        type: cloudify.types.terraform.RootModule
+        required: true
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: docker.cloudify_docker.terraform.prepare_terraform_files
+        delete:
+          implementation: docker.cloudify_docker.terraform.remove_terraform_files

@@ -13,21 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import mock
-import shutil
 import unittest
 
 from os import (path, mkdir)
 from uuid import uuid1
 
 from cloudify.state import current_ctx
-from cloudify.test_utils import workflow_test
+# from cloudify.test_utils import workflow_test
 from cloudify.mocks import MockCloudifyContext
-from cloudify.exceptions import NonRecoverableError
 
 from cloudify_docker.tasks import (list_images, list_host_details,
                                    list_containers, prepare_container_files,
                                    remove_container_files, build_image,
                                    remove_image)
+
 
 class TestPlugin(unittest.TestCase):
 
@@ -36,65 +35,66 @@ class TestPlugin(unittest.TestCase):
 
     def get_client_conf_props(self):
         return {
-            "client_config":{
+            "client_config": {
                 "docker_host": "127.0.0.1",
                 "docker_rest_port": "2375"
             }
         }
 
-    def mock_ctx(self, test_name, test_properties,
-        test_runtime_properties=None):
+    def mock_ctx(self,
+                 test_name,
+                 test_properties,
+                 test_runtime_properties=None):
         test_node_id = uuid1()
         ctx = MockCloudifyContext(
-            node_id=test_node_id,
-            properties=test_properties,
-            runtime_properties= None if not test_runtime_properties
-                                     else test_runtime_properties,
+                node_id=test_node_id,
+                properties=test_properties,
+                runtime_properties=test_runtime_properties,
         )
         return ctx
 
-    @workflow_test(path.join('blueprint', 'blueprint.yaml'),
-                   resources_to_copy=[(path.join('blueprint', 'plugin',
-                                                 'test_plugin.yaml'),
-                                       'plugin')],
-                   inputs={'docker_host': '127.0.0.1'})
-    def test_list_images_workflow(self, cfy_local):
-        # execute install workflow
-        """
-
-        :param cfy_local:
-        """
-        images = {
-            "Image1":{
-                "Created":1586389397,
-                "Id":"sha256:ef5bbc24923e"
-            }
-        }
-        mock_images_list = mock.Mock()
-        mock_images_list.images.return_value = images
-        mock_client = mock.MagicMock(return_value=mock_images_list)
-        with mock.patch('docker.Client', mock_client):
-            cfy_local.execute('install', task_retries=0)
-
-            # extract single node instance
-            instance = cfy_local.storage.get_node_instances()[0]
-
-            # assert runtime properties is properly set in node instance
-            self.assertEqual(instance.runtime_properties['images'],
-                             images)
-
-            # assert deployment outputs are ok
-            self.assertDictEqual(cfy_local.outputs(),
-                                 {'test_output': images})
+    # @workflow_test(path.join('blueprint', 'blueprint.yaml'),
+    #                resources_to_copy=[(path.join('blueprint', 'plugin',
+    #                                              'test_plugin.yaml'),
+    #                                    'plugin')],
+    #                inputs={'docker_host': '127.0.0.1'})
+    # def test_list_images_workflow(self, cfy_local):
+    #     # execute install workflow
+    #     """
+    #
+    #     :param cfy_local:
+    #     """
+    #     images = {
+    #         "Image1":{
+    #             "Created":1586389397,
+    #             "Id":"sha256:ef5bbc24923e"
+    #         }
+    #     }
+    #     mock_images_list = mock.Mock()
+    #     mock_images_list.images.return_value = images
+    #     mock_client = mock.MagicMock(return_value=mock_images_list)
+    #     with mock.patch('docker.Client', mock_client):
+    #         cfy_local.execute('install', task_retries=0)
+    #
+    #         # extract single node instance
+    #         instance = cfy_local.storage.get_node_instances()[0]
+    #
+    #         # assert runtime properties is properly set in node instance
+    #         self.assertEqual(instance.runtime_properties['images'],
+    #                          images)
+    #
+    #         # assert deployment outputs are ok
+    #         self.assertDictEqual(cfy_local.outputs(),
+    #                              {'test_output': images})
 
     def test_list_images(self):
         ctx = self.mock_ctx('test_list_images', self.get_client_conf_props())
         current_ctx.set(ctx=ctx)
 
         images = {
-            "Image1":{
-                "Created":1586389397,
-                "Id":"sha256:ef5bbc24923e"
+            "Image1": {
+                "Created": 1586389397,
+                "Id": "sha256:ef5bbc24923e"
             }
         }
 
@@ -142,9 +142,9 @@ class TestPlugin(unittest.TestCase):
         current_ctx.set(ctx=ctx)
 
         containers = {
-            "Contianer1":{
-                "Created":1586389397,
-                "Id":"sha256:e2231923e"
+            "Contianer1": {
+                "Created": 1586389397,
+                "Id": "sha256:e2231923e"
             }
         }
 
@@ -162,7 +162,7 @@ class TestPlugin(unittest.TestCase):
 
     def test_prepare_container_files(self):
         docker_host = "127.0.0.1"
-        source =  "/tmp/source"
+        source = "/tmp/source"
         if not path.exists(source):
             mkdir(source)
         dummy_file_name = str(uuid1())
@@ -173,14 +173,14 @@ class TestPlugin(unittest.TestCase):
         if not path.exists(destination):
             mkdir(destination)
         resource_config_test = {
-            "resource_config":{
-                "docker_machine":{
-                    "docker_ip":docker_host,
-                    "docker_user":"centos",
-                    "docker_key":"----RSA----",
+            "resource_config": {
+                "docker_machine": {
+                    "docker_ip": docker_host,
+                    "docker_user": "centos",
+                    "docker_key": "----RSA----",
                 },
-                "source":source,
-                "destination":destination,
+                "source": source,
+                "destination": destination,
             }
         }
 
@@ -197,17 +197,17 @@ class TestPlugin(unittest.TestCase):
 
     def test_remove_container_files(self):
         docker_host = "127.0.0.1"
-        source =  "/tmp/source"
+        source = "/tmp/source"
         destination = "/tmp/destination"
         resource_config_test = {
-            "resource_config":{
-                "docker_machine":{
-                    "docker_ip":docker_host,
-                    "docker_user":"centos",
-                    "docker_key":"----RSA----",
+            "resource_config": {
+                "docker_machine": {
+                    "docker_ip": docker_host,
+                    "docker_user": "centos",
+                    "docker_key": "----RSA----",
                 },
-                "source":source,
-                "destination":destination,
+                "source": source,
+                "destination": destination,
             }
         }
         runtime_properties_test = {
@@ -227,14 +227,14 @@ class TestPlugin(unittest.TestCase):
     def test_build_image(self):
         node_props = self.get_client_conf_props()
         node_props.update({
-            "resource_config":{
+            "resource_config": {
                 "image_content": "FROM amd64/centos:7",
                 "tag": "test:1.0"
             }
         })
-        build_result = [{"stream":"Step 1/1 : FROM amd64/centos:7"},
-                        {"stream":"\n"},
-                        {"stream":" ---\u003e 5e35e350aded\n"}]
+        build_result = [{"stream": "Step 1/1 : FROM amd64/centos:7"},
+                        {"stream": "\n"},
+                        {"stream": " ---\u003e 5e35e350aded\n"}]
         build_result_prop = ""
         for chunk in iter(build_result):
             build_result_prop += "{0}\n".format(chunk)
@@ -285,14 +285,14 @@ class TestPlugin(unittest.TestCase):
     def test_remove_image(self):
         node_props = self.get_client_conf_props()
         node_props.update({
-            "resource_config":{
+            "resource_config": {
                 "image_content": "FROM amd64/centos:7",
                 "tag": "test:1.0"
             }
         })
-        build_result = [{"stream":"Step 1/1 : FROM amd64/centos:7"},
-                        {"stream":"\n"},
-                        {"stream":" ---\u003e 5e35e350aded\n"}]
+        build_result = [{"stream": "Step 1/1 : FROM amd64/centos:7"},
+                        {"stream": "\n"},
+                        {"stream": " ---\u003e 5e35e350aded\n"}]
         build_result_prop = ""
         for chunk in iter(build_result):
             build_result_prop += "{0}\n".format(chunk)
@@ -300,8 +300,9 @@ class TestPlugin(unittest.TestCase):
             "build_result": build_result_prop,
         }
 
-        ctx = self.mock_ctx('test_remove_image', node_props,
-            runtime_properties_test)
+        ctx = self.mock_ctx('test_remove_image',
+                            node_props,
+                            runtime_properties_test)
         current_ctx.set(ctx=ctx)
 
         mock_remove_image = mock.Mock()
